@@ -62,8 +62,11 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/race_condition_test.c")
   add_executable(test_race_condition tests/race_condition_test.c)
   target_link_libraries(test_race_condition PRIVATE lumenQ)
 
+  target_compile_definitions(test_race_condition PRIVATE "NDEBUG_DISABLED_FOR_TESTING")
+  target_compile_options(test_race_condition PRIVATE -UNDEBUG)
+
   target_compile_options(test_race_condition PRIVATE -fsanitize=thread)
   target_link_options(test_race_condition PRIVATE -fsanitize=thread)
 
-  add_test(NAME RaceConditionTest COMMAND test_race_conditions)
+  add_test(NAME RaceConditionTest COMMAND test_race_condition)
 endif()
