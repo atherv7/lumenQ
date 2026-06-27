@@ -8,6 +8,8 @@ typedef struct LumenConsumer LumenConsumer;
 
 LumenConsumer *lumen_consumer_create_local(LumenProducer *prod);
 
+void lumen_consumer_destroy_local(LumenConsumer *cons);
+
 Status lumen_consumer_read(LumenConsumer *cons, ShmFrame *out_frame);
 
 #endif // !LUMEN_CONSUMER_H
