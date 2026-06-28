@@ -171,8 +171,10 @@ static void test_ipc_cross_process(const char *shm_path) {
       }
     }
 
+    uint8_t payload[10] = "IPC_DATA";
+
     assert(stat == OK);
-    assert(memcmp(out_frame.payload, "IPC_DATA", 10) == 0);
+    assert(memcmp(out_frame.payload, payload, 10) == 0);
 
     int status;
     waitpid(pid, &status, 0);
