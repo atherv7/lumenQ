@@ -37,7 +37,7 @@ typedef struct {
   uint32_t __attribute__((aligned(CACHE_LINE_SIZE))) buffer_capacity;
   uint32_t magic_number;
   uint32_t version;
-  uint32_t overflow_count;
+  _Atomic uint32_t overflow_count;
 } ShmMetadata;
 
 typedef struct {
