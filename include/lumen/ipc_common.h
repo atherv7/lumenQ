@@ -12,6 +12,7 @@
 
 #define CACHE_LINE_SIZE 64
 #define BUFFER_SIZE 2048
+#define FRAME_PAYLOAD_SIZE 52
 #define LUMEN_VERSION 1
 #define LUMEN_MAGIC_NUMBER 0x4C554D45
 #define LUMEN_DEFAULT_PATH "/lumen_shm_ring"
@@ -28,7 +29,7 @@ typedef enum {
 typedef struct {
   uint64_t sender_timestamp;
   uint32_t sequence_number;
-  uint8_t payload[52];
+  uint8_t payload[FRAME_PAYLOAD_SIZE];
 } __attribute__((aligned(CACHE_LINE_SIZE))) ShmFrame;
 
 typedef struct {
