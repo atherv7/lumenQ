@@ -54,6 +54,13 @@ static inline uint64_t wrap_index(uint64_t absolute_index) {
   return absolute_index & (BUFFER_SIZE - 1);
 }
 
+static inline uint64_t lumen_rdtsc(void) {
+  unsigned int lo, hi;
+
+  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)hi << 32) | lo;
+}
+
 // --------------------------------
 // Compile-time invariant checking
 // --------------------------------
