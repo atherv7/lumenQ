@@ -31,7 +31,7 @@ static void test_basic_bounds(void) {
   assert(lumen_producer_write(prod, mock_data, 10) == OK);
   assert(lumen_consumer_read(cons, &out_frame) == OK);
   assert(out_frame.sequence_number == 0);
-  assert(memcmp(out_frame.payload, "LumenQ", 10) == 0);
+  assert(memcmp(out_frame.payload, mock_data, 10) == 0);
 
   uint8_t dummy[4] = {0};
   for (int i = 0; i < BUFFER_SIZE; i++) {
