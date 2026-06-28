@@ -93,36 +93,33 @@ void lumen_producer_destroy_ipc(LumenProducer *prod, const char *shm_path) {
 
 Status lumen_producer_write(LumenProducer *prod, const uint8_t *data,
                             uint32_t len) {
-  if (!prod || !prod->ring_buffer || !data) {
-    return ERROR_INVALID;
-  }
-  if (len > sizeof(((ShmFrame *)0)->payload)) {
+  if (!prod || !prod->ring_buffer || !data || len > FRAME_PAYLOAD_SIZE) {
     return ERROR_INVALID;
   }
 
-  ShmMetadata *meta = &prod->ring_buffer->metadata;
+  ShmRingBuffer *buf = prod->ring_buffer;
 
   uint64_t current_write =
-      atomic_load_explicit(&meta->write_ptr, memory_order_relaxed);
+      atomic_load_explicit(&buf->metadata.write_ptr, memory_order_relaxed);
   uint64_t current_read =
-      atomic_load_explicit(&meta->read_ptr, memory_order_relaxed);
+      atomic_load_explicit(&buf->metadata.read_ptr, memory_order_acquire);
 
-  if (current_write - current_read >= BUFFER_SIZE) {
-    atomic_fetch_add_explicit(&meta->overflow_count, 1, memory_order_relaxed);
+  if (current_write - current_read >= buf->metadata.buffer_capacity) {
+    atomic_fetch_add_explicit(&buf->metadata.overflow_count, 1,
+                              memory_order_relaxed);
+
     return ERROR_FULL;
   }
 
-  uint64_t index = wrap_index(current_write);
-  ShmFrame *slot = &prod->ring_buffer->slots[index];
+  uint32_t index = current_write % buf->metadata.buffer_capacity;
+  ShmFrame *slot = &buf->slots[index];
 
+  memset(slot->payload, 0, sizeof(slot->payload));
   memcpy(slot->payload, data, len);
   slot->sequence_number = (uint32_t)current_write;
 
-  slot->sender_timestamp = 0;
-
-  atomic_store_explicit(&meta->write_ptr, current_write + 1,
+  atomic_store_explicit(&buf->metadata.write_ptr, current_write + 1,
                         memory_order_release);
-
   return OK;
 }
 

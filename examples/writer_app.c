@@ -2,12 +2,18 @@
 
 #include "lumen/ipc_common.h"
 #include "lumen/producer.h"
+#include "lumen/tuning.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
 int main(void) {
+  printf("[Producer Engine] Initializing real-time OS optimization...\n");
+
+  lumen_tune_memory_lock();
+  lumen_tune_cpu_affinity(2);
+
   printf("[Producer Engine] Initializing shared ring buffer...\n");
   LumenProducer *prod = lumen_producer_create_ipc(LUMEN_DEFAULT_PATH);
   if (!prod) {
@@ -27,7 +33,8 @@ int main(void) {
       printf("Sent: %s\n", msg_buffer);
       message_counter++;
     } else if (stat == ERROR_FULL) {
-      printf("Buffer saturated, dropping packet or waiting...");
+      fprintf(stderr, "[DROP ALERT] Ring buffer saturated! Dropped event count "
+                      "tracking incremented.\n");
     }
 
     usleep(500000);
