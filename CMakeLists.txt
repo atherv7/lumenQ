@@ -31,6 +31,7 @@ find_library(LIB_RT rt REQUIRED)
 find_library(LIB_PTHREAD pthread REQUIRED)
 
 add_library(lumenQ STATIC
+  src/shm_utils.c
   src/producer.c
   src/consumer.c
 )
@@ -41,14 +42,14 @@ target_include_directories(lumenQ PUBLIC
 
 target_link_libraries(lumenQ PRIVATE ${LIB_RT} ${LIB_PTHREAD})
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/robotics_telemetry.c")
-  add_executable(example_robotics examples/robotics_telemetry.c)
-  target_link_libraries(example_robotics PRIVATE lumenQ)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/reader_app.c")
+  add_executable(reader_app_example examples/reader_app.c)
+  target_link_libraries(reader_app_example PRIVATE lumenQ)
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/hft_market_feed.c")
-  add_executable(example_hft examples/hft_market_feed.c)
-  target_link_libraries(example_hft PRIVATE lumenQ)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/writer_app.c")
+  add_executable(writer_app_example examples/writer_app.c)
+  target_link_libraries(writer_app_example PRIVATE lumenQ)
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bench/latency_reporter.c")

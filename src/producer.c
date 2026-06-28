@@ -1,5 +1,6 @@
 #include "lumen/producer.h"
 #include "lumen/ipc_common.h"
+#include "lumen/shm_utils.h"
 
 #include <stdatomic.h>
 #include <stdint.h>
@@ -9,6 +10,7 @@
 struct LumenProducer {
   ShmRingBuffer *ring_buffer;
   int is_local;
+  int shm_fd;
 };
 
 LumenProducer *lumen_producer_create_local(void) {
@@ -41,11 +43,50 @@ LumenProducer *lumen_producer_create_local(void) {
   return prod;
 }
 
+LumenProducer *lumen_producer_create_ipc(const char *shm_path) {
+  LumenProducer *prod = malloc(sizeof(LumenProducer));
+  if (!prod) {
+    return NULL;
+  }
+
+  prod->shm_fd = -1;
+  prod->is_local = 0;
+
+  prod->ring_buffer = (ShmRingBuffer *)lumen_shm_map(
+      shm_path, sizeof(ShmRingBuffer), 1, &prod->shm_fd);
+  if (!prod->ring_buffer) {
+    free(prod);
+    return NULL;
+  }
+
+  memset(prod->ring_buffer, 0, sizeof(ShmRingBuffer));
+  prod->ring_buffer->metadata.magic_number = LUMEN_MAGIC_NUMBER;
+  prod->ring_buffer->metadata.version = LUMEN_VERSION;
+  prod->ring_buffer->metadata.buffer_capacity = BUFFER_SIZE;
+
+  atomic_init(&prod->ring_buffer->metadata.write_ptr, 0);
+  atomic_init(&prod->ring_buffer->metadata.read_ptr, 0);
+  atomic_init(&prod->ring_buffer->metadata.overflow_count, 0);
+
+  return prod;
+}
+
 void lumen_producer_destroy_local(LumenProducer *prod) {
   if (prod) {
     if (prod->is_local && prod->ring_buffer) {
       free(prod->ring_buffer);
     }
+    free(prod);
+  }
+}
+
+void lumen_producer_destroy_ipc(LumenProducer *prod, const char *shm_path) {
+  if (prod) {
+    if (!prod->is_local && prod->ring_buffer) {
+      lumen_shm_unmap(prod->ring_buffer, sizeof(ShmRingBuffer), prod->shm_fd,
+                      shm_path, 1);
+    }
+
     free(prod);
   }
 }
