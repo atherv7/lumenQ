@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
+
 #include "lumen/tuning.h"
+
 #include <pthread.h>
 #include <sched.h>
 #include <stdio.h>

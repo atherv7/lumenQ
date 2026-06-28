@@ -1,9 +1,11 @@
-#include <stddef.h>
 #define _GNU_SOURCE
+
 #include "lumen/tuning.h"
+
 #include <assert.h>
 #include <pthread.h>
 #include <sched.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>

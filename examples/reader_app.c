@@ -2,11 +2,25 @@
 
 #include "lumen/consumer.h"
 #include "lumen/ipc_common.h"
+#include "lumen/tuning.h"
 
+#include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+struct LumenConsumer {
+  ShmRingBuffer *ring_buffer;
+  int is_local;
+};
+
 int main(void) {
+  printf("[Consumer Engine] Initializing real-time OS optimization...\n");
+
+  lumen_tune_memory_lock();
+  lumen_tune_cpu_affinity(3);
+
   printf("[Consumer Engine] Connecting to shared ring buffer channel...\n");
 
   LumenConsumer *cons = NULL;
@@ -15,8 +29,22 @@ int main(void) {
     sleep(1);
   }
 
-  printf("[Consumer Engine] Attached successfully. Polling loop active\n");
+  printf("[Consumer Engine] Attached successfully. Core affinity bound to core "
+         "3.\n");
+  printf("[Consumer Engine] Polling loop active...\n");
+
   ShmFrame frame;
+  uint32_t last_overflow_count = 0;
+  ShmRingBuffer *buf = cons->ring_buffer;
+
+  if (buf) {
+    last_overflow_count = atomic_load_explicit(&buf->metadata.overflow_count,
+                                               memory_order_relaxed);
+    if (last_overflow_count > 0) {
+      printf("[INIT] System recovered with %u historically dropped frames.\n",
+             last_overflow_count);
+    }
+  }
 
   while (1) {
     Status stat = lumen_consumer_read(cons, &frame);
@@ -25,6 +53,20 @@ int main(void) {
              (char *)frame.payload);
     } else if (stat == ERROR_EMPTY) {
       usleep(10000);
+    }
+
+    if (buf) {
+      uint32_t current_overflows = atomic_load_explicit(
+          &buf->metadata.overflow_count, memory_order_relaxed);
+      if (current_overflows > last_overflow_count) {
+        uint32_t delta = current_overflows - last_overflow_count;
+        fprintf(stderr,
+                "[WARNING] Slow Consumer Alert! Producer dropped %u frame(s). "
+                "Total dropped packets: %u\n",
+                delta, current_overflows);
+
+        last_overflow_count = current_overflows;
+      }
     }
   }
 

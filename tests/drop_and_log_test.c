@@ -1,6 +1,6 @@
-#include "lumen/consumer.h"
 #include "lumen/ipc_common.h"
 #include "lumen/producer.h"
+
 #include <assert.h>
 #include <stdatomic.h>
 #include <stdint.h>
