@@ -265,7 +265,7 @@ static void test_ipc_buffer_saturation(const char *shm_path) {
 }
 
 int main(void) {
-  printf("=== Starting LumenQ Verification Test ===");
+  printf("=== Starting LumenQ Race Condition Verification Test ===\n");
 
   test_basic_bounds();
   test_concurrent_race_conditions();
@@ -277,6 +277,7 @@ int main(void) {
   test_ipc_buffer_saturation(test_shm_path);
   test_ipc_cross_process(test_shm_path);
 
-  printf("=== All Verification Tests Completed Successfully! === \n");
+  printf("=== All Race Condition Verification Tests Completed Successfully! "
+         "=== \n");
   return 0;
 }

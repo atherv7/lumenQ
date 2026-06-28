@@ -34,6 +34,7 @@ add_library(lumenQ STATIC
   src/shm_utils.c
   src/producer.c
   src/consumer.c
+  src/tuning.c
 )
 
 target_include_directories(lumenQ PUBLIC
@@ -59,15 +60,21 @@ endif()
 
 enable_testing()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/race_condition_test.c")
-  add_executable(test_race_condition tests/race_condition_test.c)
-  target_link_libraries(test_race_condition PRIVATE lumenQ)
+file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.c")
 
-  target_compile_definitions(test_race_condition PRIVATE "NDEBUG_DISABLED_FOR_TESTING")
-  target_compile_options(test_race_condition PRIVATE -UNDEBUG)
+foreach(SOURCE_FILE ${TEST_SOURCES})
+  get_filename_component(TEST_NAME ${SOURCE_FILE} NAME_WE)
+  set(TARGET_NAME "${TEST_NAME}")
+  string(MAKE_C_IDENTIFIER "${TEST_NAME}" TEST_TITLE)
 
-  target_compile_options(test_race_condition PRIVATE -fsanitize=thread)
-  target_link_options(test_race_condition PRIVATE -fsanitize=thread)
+  add_executable(${TARGET_NAME} ${SOURCE_FILE})
+  target_link_libraries(${TARGET_NAME} PRIVATE lumenQ)
 
-  add_test(NAME RaceConditionTest COMMAND test_race_condition)
-endif()
+  target_compile_definitions(${TARGET_NAME} PRIVATE "NDEBUG_DISABLED_FOR_TESTING")
+  target_compile_options(${TARGET_NAME} PRIVATE -UNDEBUG)
+
+  target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=thread)
+  target_link_options(${TARGET_NAME} PRIVATE -fsanitize=thread)
+
+  add_test(NAME ${TEST_TITLE} COMMAND ${TARGET_NAME})
+endforeach()
