@@ -1,14 +1,20 @@
+#define _DEFAULT_SOURCE
+
 #include "lumen/consumer.h"
 #include "lumen/ipc_common.h"
 #include "lumen/producer.h"
 
 #include <assert.h>
 #include <bits/pthreadtypes.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define TEST_COUNT 500000
 
@@ -121,11 +127,153 @@ static void test_concurrent_race_conditions(void) {
          "corruption");
 }
 
+static void test_ipc_cross_process(const char *shm_path) {
+  printf("[TEST] Verifying cross-process IPC boundary validation...\n");
+
+  pid_t pid = fork();
+  assert(pid != -1);
+
+  if (pid == 0) {
+    LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+    if (!prod) {
+      exit(EXIT_FAILURE);
+    }
+
+    uint8_t payload[10] = "IPC_DATA";
+
+    usleep(50000);
+
+    if (lumen_producer_write(prod, payload, 10) != OK) {
+      exit(EXIT_FAILURE);
+    }
+
+    lumen_producer_destroy_ipc(prod, shm_path);
+    exit(EXIT_SUCCESS);
+  } else {
+    LumenConsumer *cons = NULL;
+
+    for (int i = 0; i < 100; i++) {
+      cons = lumen_consumer_create_ipc(shm_path);
+      if (cons) {
+        break;
+      }
+      usleep(50000);
+    }
+    assert(cons != NULL);
+
+    ShmFrame out_frame;
+    Status stat = ERROR_EMPTY;
+
+    for (int i = 0; i < 1000 && stat == ERROR_EMPTY; i++) {
+      stat = lumen_consumer_read(cons, &out_frame);
+      if (stat == ERROR_EMPTY) {
+        usleep(1000);
+      }
+    }
+
+    assert(stat == OK);
+    assert(memcmp(out_frame.payload, "IPC_DATA", 10) == 0);
+
+    int status;
+    waitpid(pid, &status, 0);
+    assert(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS);
+
+    lumen_consumer_destroy_ipc(cons);
+    printf("[PASS] Cross-process memory pipeline verified successfully.\n");
+  }
+}
+
+static void test_ipc_consumer_starts_first(const char *shm_path) {
+  printf(
+      "[TEST] Verifying consumer resilience when starting before prodcuer...");
+
+  shm_unlink(shm_path);
+
+  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  assert(cons == NULL);
+
+  LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+  assert(prod != NULL);
+
+  cons = lumen_consumer_create_ipc(shm_path);
+  assert(cons != NULL);
+
+  lumen_consumer_destroy_ipc(cons);
+  lumen_producer_destroy_ipc(prod, shm_path);
+  printf("[PASS] Consumer gracefully handled uninitialized shared memory.\n");
+}
+
+static void test_ipc_corrupt_metadata_validation(const char *shm_path) {
+  printf("[TEST] Verifying validation of corrupted or malformed memory "
+         "segments...");
+
+  int fd = shm_open(shm_path, O_CREAT | O_RDWR | O_TRUNC, 0666);
+  assert(fd != -1);
+  assert(ftruncate(fd, sizeof(ShmRingBuffer)) == 0);
+
+  void *raw_ptr = mmap(NULL, sizeof(ShmRingBuffer), PROT_READ | PROT_WRITE,
+                       MAP_SHARED, fd, 0);
+  assert(raw_ptr != MAP_FAILED);
+
+  ShmRingBuffer *bad_buf = (ShmRingBuffer *)raw_ptr;
+  bad_buf->metadata.magic_number = 0xDEADBEEF;
+  bad_buf->metadata.buffer_capacity = 999999;
+
+  munmap(raw_ptr, sizeof(ShmRingBuffer));
+  close(fd);
+
+  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  assert(cons == NULL);
+
+  shm_unlink(shm_path);
+  printf(
+      "[PASS] Corrupt layout validation successfully rejected bad segment.\n");
+}
+
+static void test_ipc_buffer_saturation(const char *shm_path) {
+  printf("[TEST] Verifying overflow diagnostics under process saturation...\n");
+
+  LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+  assert(prod != NULL);
+
+  uint8_t dummy[10] = "PACKET";
+
+  int writes = 0;
+  int dropped = 0;
+
+  for (int i = 0; i < BUFFER_SIZE + 5; i++) {
+    Status stat = lumen_producer_write(prod, dummy, sizeof(dummy));
+    if (stat == OK) {
+      writes++;
+    }
+    if (stat == ERROR_FULL) {
+      dropped++;
+    }
+  }
+
+  assert(writes == BUFFER_SIZE);
+  assert(dropped == 5);
+
+  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  assert(cons != NULL);
+
+  lumen_consumer_destroy_ipc(cons);
+  lumen_producer_destroy_ipc(prod, shm_path);
+  printf("[PASS] Overrun diagnostic tracking fully verified.\n");
+}
+
 int main(void) {
   printf("=== Starting LumenQ Verification Test ===");
 
   test_basic_bounds();
   test_concurrent_race_conditions();
+
+  const char *test_shm_path = "/lumenq_test_buffer";
+
+  test_ipc_consumer_starts_first(test_shm_path);
+  test_ipc_corrupt_metadata_validation(test_shm_path);
+  test_ipc_buffer_saturation(test_shm_path);
+  test_ipc_cross_process(test_shm_path);
 
   printf("=== All Verification Tests Completed Successfully! === \n");
   return 0;
