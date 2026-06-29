@@ -53,8 +53,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/writer_app.c")
   target_link_libraries(writer_app_example PRIVATE lumenQ)
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bench/latency_reporter.c")
-  add_executable(bench_latency bench/latency_reporter.c)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bench/benchmark_latency.c")
+  add_executable(bench_latency bench/benchmark_latency.c)
   target_link_libraries(bench_latency PRIVATE lumenQ)
 endif()
 

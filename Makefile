@@ -17,6 +17,11 @@ build:
 test:
 	@cd build && ctest --output-on-failure
 
+.PHONY: benchmark
+benchmark:
+	@echo "[RUNNING] Launching nanosecond latency profiling suite..."
+	@./build/bench_latency
+
 .PHONY: clean
 clean:
 	@echo "Scrubbing build directory and linter artifacts..."

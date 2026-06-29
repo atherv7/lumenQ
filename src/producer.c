@@ -117,6 +117,7 @@ Status lumen_producer_write(LumenProducer *prod, const uint8_t *data,
   memset(slot->payload, 0, sizeof(slot->payload));
   memcpy(slot->payload, data, len);
   slot->sequence_number = (uint32_t)current_write;
+  slot->sender_timestamp = lumen_rdtsc();
 
   atomic_store_explicit(&buf->metadata.write_ptr, current_write + 1,
                         memory_order_release);
