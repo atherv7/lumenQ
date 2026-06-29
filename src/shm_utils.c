@@ -7,8 +7,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-void *lumen_shm_map(const char *path, size_t size, int is_producer,
-                    int *out_fd) {
+void* lumen_shm_map(const char* path, size_t size, int is_producer,
+                    int* out_fd) {
   int oflag = is_producer ? (O_CREAT | O_RDWR | O_TRUNC) : O_RDWR;
 
   int fd = shm_open(path, oflag, S_IRUSR | S_IWUSR);
@@ -26,7 +26,7 @@ void *lumen_shm_map(const char *path, size_t size, int is_producer,
     }
   }
 
-  void *mapped_ptr =
+  void* mapped_ptr =
       mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (mapped_ptr == MAP_FAILED) {
     perror("mmap failed");
@@ -41,7 +41,7 @@ void *lumen_shm_map(const char *path, size_t size, int is_producer,
   return mapped_ptr;
 }
 
-void lumen_shm_unmap(void *mapped_ptr, size_t size, int fd, const char *path,
+void lumen_shm_unmap(void* mapped_ptr, size_t size, int fd, const char* path,
                      int is_producer) {
   if (mapped_ptr && mapped_ptr != MAP_FAILED) {
     munmap(mapped_ptr, size);

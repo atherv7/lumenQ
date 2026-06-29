@@ -13,6 +13,11 @@ build:
 		ln -s build/compile_commands.json compile_commands.json; \
 	fi
 
+.PHONY: format
+format:
+	@echo "[FORMATTING] Formatting the codebase..."
+	@clang-format -i src/*.c tests/*.c include/lumen/*.h bench/*.c
+
 .PHONY: test
 test:
 	@cd build && ctest --output-on-failure

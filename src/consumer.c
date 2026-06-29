@@ -7,19 +7,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-ShmRingBuffer *idx_internal_get_buf(LumenProducer *prod);
+ShmRingBuffer* idx_internal_get_buf(LumenProducer* prod);
 
 struct LumenConsumer {
-  ShmRingBuffer *ring_buffer;
+  ShmRingBuffer* ring_buffer;
   int shm_fd;
 };
 
-LumenConsumer *lumen_consumer_create_local(LumenProducer *prod) {
+LumenConsumer* lumen_consumer_create_local(LumenProducer* prod) {
   if (!prod) {
     return NULL;
   }
 
-  LumenConsumer *cons = malloc(sizeof(LumenConsumer));
+  LumenConsumer* cons = malloc(sizeof(LumenConsumer));
   if (!cons) {
     return NULL;
   }
@@ -33,15 +33,15 @@ LumenConsumer *lumen_consumer_create_local(LumenProducer *prod) {
   return cons;
 }
 
-LumenConsumer *lumen_consumer_create_ipc(const char *shm_path) {
-  LumenConsumer *cons = malloc(sizeof(LumenConsumer));
+LumenConsumer* lumen_consumer_create_ipc(const char* shm_path) {
+  LumenConsumer* cons = malloc(sizeof(LumenConsumer));
   if (!cons) {
     return NULL;
   }
 
   cons->shm_fd = -1;
 
-  cons->ring_buffer = (ShmRingBuffer *)lumen_shm_map(
+  cons->ring_buffer = (ShmRingBuffer*)lumen_shm_map(
       shm_path, sizeof(ShmRingBuffer), 0, &cons->shm_fd);
   if (!cons->ring_buffer) {
     free(cons);
@@ -59,13 +59,13 @@ LumenConsumer *lumen_consumer_create_ipc(const char *shm_path) {
   return cons;
 }
 
-void lumen_consumer_destroy_local(LumenConsumer *cons) {
+void lumen_consumer_destroy_local(LumenConsumer* cons) {
   if (cons) {
     free(cons);
   }
 }
 
-void lumen_consumer_destroy_ipc(LumenConsumer *cons) {
+void lumen_consumer_destroy_ipc(LumenConsumer* cons) {
   if (cons) {
     if (cons->ring_buffer) {
       lumen_shm_unmap(cons->ring_buffer, sizeof(ShmRingBuffer), cons->shm_fd,
@@ -76,12 +76,12 @@ void lumen_consumer_destroy_ipc(LumenConsumer *cons) {
   }
 }
 
-Status lumen_consumer_read(LumenConsumer *cons, ShmFrame *out_frame) {
+Status lumen_consumer_read(LumenConsumer* cons, ShmFrame* out_frame) {
   if (!cons || !cons->ring_buffer || !out_frame) {
     return ERROR_INVALID;
   }
 
-  ShmMetadata *meta = &cons->ring_buffer->metadata;
+  ShmMetadata* meta = &cons->ring_buffer->metadata;
 
   uint64_t current_read =
       atomic_load_explicit(&meta->read_ptr, memory_order_relaxed);
@@ -94,7 +94,7 @@ Status lumen_consumer_read(LumenConsumer *cons, ShmFrame *out_frame) {
   }
 
   uint64_t index = wrap_index(current_read);
-  ShmFrame *slot = &cons->ring_buffer->slots[index];
+  ShmFrame* slot = &cons->ring_buffer->slots[index];
 
   memcpy(out_frame, slot, sizeof(ShmFrame));
 

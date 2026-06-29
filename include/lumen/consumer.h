@@ -6,14 +6,14 @@
 
 typedef struct LumenConsumer LumenConsumer;
 
-LumenConsumer *lumen_consumer_create_local(LumenProducer *prod);
+LumenConsumer* lumen_consumer_create_local(LumenProducer* prod);
 
-void lumen_consumer_destroy_local(LumenConsumer *cons);
+void lumen_consumer_destroy_local(LumenConsumer* cons);
 
-LumenConsumer *lumen_consumer_create_ipc(const char *shm_path);
+LumenConsumer* lumen_consumer_create_ipc(const char* shm_path);
 
-void lumen_consumer_destroy_ipc(LumenConsumer *cons);
+void lumen_consumer_destroy_ipc(LumenConsumer* cons);
 
-Status lumen_consumer_read(LumenConsumer *cons, ShmFrame *out_frame);
+Status lumen_consumer_read(LumenConsumer* cons, ShmFrame* out_frame);
 
 #endif // !LUMEN_CONSUMER_H

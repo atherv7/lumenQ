@@ -82,8 +82,8 @@ int main(void) {
   printf("[BENCHMARK] Detected CPU scaling running at roughly %.2f GHz\n",
          cpu_ghz);
 
-  LumenProducer *prod = lumen_producer_create_local();
-  LumenConsumer *cons = lumen_consumer_create_local(prod);
+  LumenProducer* prod = lumen_producer_create_local();
+  LumenConsumer* cons = lumen_consumer_create_local(prod);
 
   uint8_t dummy_data[32] = "BENCHMARK_PAYLOAD_DATA_PACKET";
   ShmFrame read_frame;
