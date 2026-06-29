@@ -10,7 +10,7 @@
 static void test_drop_and_log(void) {
   printf("[TEST] Verifying 'Drop & Log' saturation invariant...\n");
 
-  LumenProducer *prod = lumen_producer_create_local();
+  LumenProducer* prod = lumen_producer_create_local();
   assert(prod != NULL);
 
   uint8_t payload[] = "TELEMETRY";
@@ -34,9 +34,9 @@ static void test_drop_and_log(void) {
          "saturation!");
 
   struct HiddenProducer {
-    ShmRingBuffer *ring_buffer;
+    ShmRingBuffer* ring_buffer;
   };
-  ShmRingBuffer *buf = ((struct HiddenProducer *)prod)->ring_buffer;
+  ShmRingBuffer* buf = ((struct HiddenProducer*)prod)->ring_buffer;
 
   uint32_t tracked_overflows = atomic_load(&buf->metadata.overflow_count);
   assert(tracked_overflows == (uint32_t)target_overflows &&

@@ -32,11 +32,11 @@ static void test_kernel_tuning_verification(void) {
   }
 
   size_t page_size = (size_t)sysconf(_SC_PAGESIZE);
-  void *test_page = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
+  void* test_page = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
                          MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   assert(test_page != MAP_FAILED);
 
-  ((volatile char *)test_page)[0] = 'A';
+  ((volatile char*)test_page)[0] = 'A';
 
   unsigned char vec = 0;
   if (mincore(test_page, page_size, &vec) == 0) {

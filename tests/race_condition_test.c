@@ -19,15 +19,15 @@
 #define TEST_COUNT 500000
 
 typedef struct {
-  LumenProducer *prod;
-  LumenConsumer *cons;
+  LumenProducer* prod;
+  LumenConsumer* cons;
 } ThreadContext;
 
 static void test_basic_bounds(void) {
   printf("[TEST] Running basic functional and boundary checks...");
 
-  LumenProducer *prod = lumen_producer_create_local();
-  LumenConsumer *cons = lumen_consumer_create_local(prod);
+  LumenProducer* prod = lumen_producer_create_local();
+  LumenConsumer* cons = lumen_consumer_create_local(prod);
 
   ShmFrame out_frame;
 
@@ -52,8 +52,8 @@ static void test_basic_bounds(void) {
   printf("[PASS] Basic functional boundaries verified.\n");
 }
 
-void *producer_thread_worker(void *arg) {
-  LumenProducer *prod = ((ThreadContext *)arg)->prod;
+void* producer_thread_worker(void* arg) {
+  LumenProducer* prod = ((ThreadContext*)arg)->prod;
   uint32_t payload_val = 0xAABBCCDD;
 
   for (uint32_t i = 0; i < TEST_COUNT; i++) {
@@ -68,8 +68,8 @@ void *producer_thread_worker(void *arg) {
   return NULL;
 }
 
-void *consumer_thread_worker(void *arg) {
-  LumenConsumer *cons = ((ThreadContext *)arg)->cons;
+void* consumer_thread_worker(void* arg) {
+  LumenConsumer* cons = ((ThreadContext*)arg)->cons;
   ShmFrame received_frame;
   uint32_t expected_seq = 0;
 
@@ -108,8 +108,8 @@ static void test_concurrent_race_conditions(void) {
          "iterations)...",
          TEST_COUNT);
 
-  LumenProducer *prod = lumen_producer_create_local();
-  LumenConsumer *cons = lumen_consumer_create_local(prod);
+  LumenProducer* prod = lumen_producer_create_local();
+  LumenConsumer* cons = lumen_consumer_create_local(prod);
 
   ThreadContext ctx = {.prod = prod, .cons = cons};
   pthread_t prod_tid, cons_tid;
@@ -127,14 +127,14 @@ static void test_concurrent_race_conditions(void) {
          "corruption");
 }
 
-static void test_ipc_cross_process(const char *shm_path) {
+static void test_ipc_cross_process(const char* shm_path) {
   printf("[TEST] Verifying cross-process IPC boundary validation...\n");
 
   pid_t pid = fork();
   assert(pid != -1);
 
   if (pid == 0) {
-    LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+    LumenProducer* prod = lumen_producer_create_ipc(shm_path);
     if (!prod) {
       exit(EXIT_FAILURE);
     }
@@ -150,7 +150,7 @@ static void test_ipc_cross_process(const char *shm_path) {
     lumen_producer_destroy_ipc(prod, shm_path);
     exit(EXIT_SUCCESS);
   } else {
-    LumenConsumer *cons = NULL;
+    LumenConsumer* cons = NULL;
 
     for (int i = 0; i < 100; i++) {
       cons = lumen_consumer_create_ipc(shm_path);
@@ -185,16 +185,16 @@ static void test_ipc_cross_process(const char *shm_path) {
   }
 }
 
-static void test_ipc_consumer_starts_first(const char *shm_path) {
+static void test_ipc_consumer_starts_first(const char* shm_path) {
   printf(
       "[TEST] Verifying consumer resilience when starting before prodcuer...");
 
   shm_unlink(shm_path);
 
-  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  LumenConsumer* cons = lumen_consumer_create_ipc(shm_path);
   assert(cons == NULL);
 
-  LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+  LumenProducer* prod = lumen_producer_create_ipc(shm_path);
   assert(prod != NULL);
 
   cons = lumen_consumer_create_ipc(shm_path);
@@ -205,7 +205,7 @@ static void test_ipc_consumer_starts_first(const char *shm_path) {
   printf("[PASS] Consumer gracefully handled uninitialized shared memory.\n");
 }
 
-static void test_ipc_corrupt_metadata_validation(const char *shm_path) {
+static void test_ipc_corrupt_metadata_validation(const char* shm_path) {
   printf("[TEST] Verifying validation of corrupted or malformed memory "
          "segments...");
 
@@ -213,18 +213,18 @@ static void test_ipc_corrupt_metadata_validation(const char *shm_path) {
   assert(fd != -1);
   assert(ftruncate(fd, sizeof(ShmRingBuffer)) == 0);
 
-  void *raw_ptr = mmap(NULL, sizeof(ShmRingBuffer), PROT_READ | PROT_WRITE,
+  void* raw_ptr = mmap(NULL, sizeof(ShmRingBuffer), PROT_READ | PROT_WRITE,
                        MAP_SHARED, fd, 0);
   assert(raw_ptr != MAP_FAILED);
 
-  ShmRingBuffer *bad_buf = (ShmRingBuffer *)raw_ptr;
+  ShmRingBuffer* bad_buf = (ShmRingBuffer*)raw_ptr;
   bad_buf->metadata.magic_number = 0xDEADBEEF;
   bad_buf->metadata.buffer_capacity = 999999;
 
   munmap(raw_ptr, sizeof(ShmRingBuffer));
   close(fd);
 
-  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  LumenConsumer* cons = lumen_consumer_create_ipc(shm_path);
   assert(cons == NULL);
 
   shm_unlink(shm_path);
@@ -232,10 +232,10 @@ static void test_ipc_corrupt_metadata_validation(const char *shm_path) {
       "[PASS] Corrupt layout validation successfully rejected bad segment.\n");
 }
 
-static void test_ipc_buffer_saturation(const char *shm_path) {
+static void test_ipc_buffer_saturation(const char* shm_path) {
   printf("[TEST] Verifying overflow diagnostics under process saturation...\n");
 
-  LumenProducer *prod = lumen_producer_create_ipc(shm_path);
+  LumenProducer* prod = lumen_producer_create_ipc(shm_path);
   assert(prod != NULL);
 
   uint8_t dummy[10] = "PACKET";
@@ -256,7 +256,7 @@ static void test_ipc_buffer_saturation(const char *shm_path) {
   assert(writes == BUFFER_SIZE);
   assert(dropped == 5);
 
-  LumenConsumer *cons = lumen_consumer_create_ipc(shm_path);
+  LumenConsumer* cons = lumen_consumer_create_ipc(shm_path);
   assert(cons != NULL);
 
   lumen_consumer_destroy_ipc(cons);
@@ -270,7 +270,7 @@ int main(void) {
   test_basic_bounds();
   test_concurrent_race_conditions();
 
-  const char *test_shm_path = "/lumenq_test_buffer";
+  const char* test_shm_path = "/lumenq_test_buffer";
 
   test_ipc_consumer_starts_first(test_shm_path);
   test_ipc_corrupt_metadata_validation(test_shm_path);
