@@ -34,9 +34,9 @@ An ultra-low latency, lock-free Inter-Process Communication (IPC) ring buffer pi
 * CMake v3.15+
 * GCC or Clang compiler supporting C11 atomics
 
-### Compilation via Makefile
+### Makefile Commands
 
-The project includes a top-level `Makefile` wrapper that automatically configures an optimized Release build configuration (`-O3`) and executes tests across all available CPU cores.
+The project includes a top-level `Makefile` wrapper that automatically configures an optimized Release build configuration (`-O3`) and executes tests across all available CPU cores. The `Makefile` also allows benchmarking the current software.
 
 ```bash
 # Build the production library and all verification tools
