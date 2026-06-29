@@ -2,6 +2,7 @@
 
 An ultra-low latency, lock-free Inter-Process Communication (IPC) ring buffer pipeline written in C, Designed for performance-critical architecture. `lumenQ` achieves sub-15 nanosecond transit times by operating entirely within the CPU cache hierarchy.
 
+```
 ==================================================
    LUMENQ LOCK-FREE INTER-PROCESS LATENCY SHEET
 ==================================================
@@ -14,6 +15,7 @@ An ultra-low latency, lock-free Inter-Process Communication (IPC) ring buffer pi
  p99                     :   11.00 ns
  p99.99 (Tail Latency)   :   25.00 ns
 ==================================================
+```
 
 ## Key Architectural Features
 
