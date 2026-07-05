@@ -3,6 +3,7 @@
 #include "lumen/shm_utils.h"
 
 #include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,4 +103,13 @@ Status lumen_consumer_read(LumenConsumer* cons, ShmFrame* out_frame) {
                         memory_order_relaxed);
 
   return OK;
+}
+
+uint32_t lumen_consumer_get_overflow_count(LumenConsumer* cons) {
+  if (!cons || !cons->ring_buffer) {
+    return 0;
+  }
+
+  return atomic_load_explicit(&cons->ring_buffer->metadata.overflow_count,
+                              memory_order_relaxed);
 }
