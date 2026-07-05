@@ -10,9 +10,22 @@
 // System configuration
 // ---------------------
 
+#ifndef CACHE_LINE_SIZE
 #define CACHE_LINE_SIZE 64
+#endif
+
+#ifndef BUFFER_SIZE
 #define BUFFER_SIZE 2048
+#endif
+
+#ifndef FRAME_PAYLOAD_SIZE
 #define FRAME_PAYLOAD_SIZE 52
+#endif
+
+// ---------------------
+// System (static) configuration
+// ---------------------
+
 #define LUMEN_VERSION 1
 #define LUMEN_MAGIC_NUMBER 0x4C554D45
 #define LUMEN_DEFAULT_PATH "/lumen_shm_ring"
