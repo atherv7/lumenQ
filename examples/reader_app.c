@@ -10,11 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct LumenConsumer {
-  ShmRingBuffer *ring_buffer;
-  int is_local;
-};
-
 int main(void) {
   printf("[Consumer Engine] Initializing real-time OS optimization...\n");
 
@@ -23,7 +18,7 @@ int main(void) {
 
   printf("[Consumer Engine] Connecting to shared ring buffer channel...\n");
 
-  LumenConsumer *cons = NULL;
+  LumenConsumer* cons = NULL;
   while ((cons = lumen_consumer_create_ipc(LUMEN_DEFAULT_PATH)) == NULL) {
     printf("Waiting for shared memory segment configuration files...\n");
     sleep(1);
@@ -35,38 +30,31 @@ int main(void) {
 
   ShmFrame frame;
   uint32_t last_overflow_count = 0;
-  ShmRingBuffer *buf = cons->ring_buffer;
 
-  if (buf) {
-    last_overflow_count = atomic_load_explicit(&buf->metadata.overflow_count,
-                                               memory_order_relaxed);
-    if (last_overflow_count > 0) {
-      printf("[INIT] System recovered with %u historically dropped frames.\n",
-             last_overflow_count);
-    }
+  last_overflow_count = lumen_consumer_get_overflow_count(cons);
+  if (last_overflow_count > 0) {
+    printf("[INIT] System recovered with %u historically dropped frames.\n",
+           last_overflow_count);
   }
 
   while (1) {
     Status stat = lumen_consumer_read(cons, &frame);
     if (stat == OK) {
       printf("Received Sequence [%u]: %s\n", frame.sequence_number,
-             (char *)frame.payload);
+             (char*)frame.payload);
     } else if (stat == ERROR_EMPTY) {
       usleep(10000);
     }
 
-    if (buf) {
-      uint32_t current_overflows = atomic_load_explicit(
-          &buf->metadata.overflow_count, memory_order_relaxed);
-      if (current_overflows > last_overflow_count) {
-        uint32_t delta = current_overflows - last_overflow_count;
-        fprintf(stderr,
-                "[WARNING] Slow Consumer Alert! Producer dropped %u frame(s). "
-                "Total dropped packets: %u\n",
-                delta, current_overflows);
+    uint32_t current_overflows = lumen_consumer_get_overflow_count(cons);
+    if (current_overflows > last_overflow_count) {
+      uint32_t delta = current_overflows - last_overflow_count;
+      fprintf(stderr,
+              "[WARNING] Slow Consumer Alert! Producer dropped %u frame(s). "
+              "Total dropped packets: %u\n",
+              delta, current_overflows);
 
-        last_overflow_count = current_overflows;
-      }
+      last_overflow_count = current_overflows;
     }
   }
 
