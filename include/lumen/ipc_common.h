@@ -39,6 +39,7 @@ typedef struct {
   uint32_t magic_number;
   uint32_t version;
   _Atomic uint32_t overflow_count;
+  _Atomic uint32_t ready;
 } ShmMetadata;
 
 typedef struct {

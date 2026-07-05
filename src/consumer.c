@@ -49,6 +49,14 @@ LumenConsumer* lumen_consumer_create_ipc(const char* shm_path) {
     return NULL;
   }
 
+  if (!atomic_load_explicit(&cons->ring_buffer->metadata.ready,
+                            memory_order_acquire)) {
+    lumen_shm_unmap(cons->ring_buffer, sizeof(ShmRingBuffer), cons->shm_fd,
+                    NULL, 0);
+    free(cons);
+    return NULL;
+  }
+
   if (cons->ring_buffer->metadata.magic_number != LUMEN_MAGIC_NUMBER) {
     fprintf(stderr, "Shared Magic Number: Number validation failed!\n");
     lumen_shm_unmap(cons->ring_buffer, sizeof(ShmRingBuffer), cons->shm_fd,
