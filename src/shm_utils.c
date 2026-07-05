@@ -9,7 +9,7 @@
 
 void* lumen_shm_map(const char* path, size_t size, int is_producer,
                     int* out_fd) {
-  int oflag = is_producer ? (O_CREAT | O_RDWR | O_TRUNC) : O_RDWR;
+  int oflag = is_producer ? (O_CREAT | O_RDWR) : O_RDWR;
 
   int fd = shm_open(path, oflag, S_IRUSR | S_IWUSR);
   if (fd == -1) {
@@ -22,6 +22,17 @@ void* lumen_shm_map(const char* path, size_t size, int is_producer,
       perror("ftruncate failed");
       close(fd);
       shm_unlink(path);
+      return NULL;
+    }
+  } else {
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
+      perror("fstat failed");
+      close(fd);
+      return NULL;
+    }
+    if ((size_t)st.st_size < size) {
+      close(fd);
       return NULL;
     }
   }

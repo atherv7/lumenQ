@@ -39,6 +39,9 @@ LumenProducer* lumen_producer_create_local(void) {
   atomic_init(&prod->ring_buffer->metadata.read_ptr, 0);
   atomic_init(&prod->ring_buffer->metadata.overflow_count, 0);
 
+  atomic_store_explicit(&prod->ring_buffer->metadata.ready, 1,
+                        memory_order_release);
+
   prod->is_local = 1;
   return prod;
 }
@@ -67,6 +70,9 @@ LumenProducer* lumen_producer_create_ipc(const char* shm_path) {
   atomic_init(&prod->ring_buffer->metadata.write_ptr, 0);
   atomic_init(&prod->ring_buffer->metadata.read_ptr, 0);
   atomic_init(&prod->ring_buffer->metadata.overflow_count, 0);
+
+  atomic_store_explicit(&prod->ring_buffer->metadata.ready, 1,
+                        memory_order_release);
 
   return prod;
 }
