@@ -37,6 +37,11 @@ add_library(lumenQ STATIC
   src/tuning.c
 )
 
+target_compile_definitions(lumenQ PUBLIC
+  $<$<BOOL:${LUMEN_FRAME_PAYLOAD_SIZE}>:FRAME_PAYLOAD_SIZE=${LUMEN_FRAME_PAYLOAD_SIZE}>
+  $<$<BOOL:${LUMEN_BUFFER_SIZE}>:BUFFER_SIZE=${LUMEN_BUFFER_SIZE}>
+)
+
 target_include_directories(lumenQ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
