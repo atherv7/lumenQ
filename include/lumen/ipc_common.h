@@ -70,8 +70,7 @@ static inline uint64_t wrap_index(uint64_t absolute_index) {
 
 static inline uint64_t lumen_rdtsc(void) {
   unsigned int lo, hi;
-
-  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  __asm__ __volatile__("lfence\n\t rdtsc" : "=a"(lo), "=d"(hi)::"memory");
   return ((uint64_t)hi << 32) | lo;
 }
 
